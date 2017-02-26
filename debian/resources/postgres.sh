@@ -12,9 +12,24 @@ echo "Install PostgreSQL and create the database and users\n"
 #included in the distribution
 #apt-get install -y --force-yes sudo postgresql
 
+#real_os=$(lsb_release -is)
+codename=$(lsb_release -cs)
+
 #postgres official repository
-echo 'deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main' > /etc/apt/sources.list.d/pgdg.list
-wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+if [ .$USE_SWITCH_PACKAGE_UNOFFICIAL_ARM = .true ]; then
+        #9.x - http://repo.sip247.com/debian/postgresql-armhf/dists/stretch/ - not yet
+        #8.x - http://repo.sip247.com/debian/postgresql-armhf/dists/jessie/ - recommended
+        echo 'deb http://repo.sip247.com/debian/postgresql-armhf/ '$codename' main' > /etc/apt/sources.list.d/pgdg.list
+        curl http://repo.sip247.com/debian/sip247.com.gpg.key | apt-key add -
+else
+        #16.10.x - http://apt.postgresql.org/pub/repos/apt/dists/yakkety-pgdg/
+        #16.04.x - http://apt.postgresql.org/pub/repos/apt/dists/xenial-pgdg/
+        #14.04.x - http://apt.postgresql.org/pub/repos/apt/dists/trusty-pgdg/
+        #9.x - http://apt.postgresql.org/pub/repos/apt/dists/stretch-pgdg/
+        #8.x - http://apt.postgresql.org/pub/repos/apt/dists/jessie-pgdg/
+        echo 'deb http://apt.postgresql.org/pub/repos/apt/ '$codename'-pgdg main' > /etc/apt/sources.list.d/pgdg.list
+        wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+fi
 apt-get update && apt-get upgrade -y
 apt-get install -y --force-yes sudo postgresql
 
