@@ -30,11 +30,23 @@ if [ ."$database_version" = ."9.3" ]; then
         pkg install --yes postgresql93-server
 fi
 
+#update the list of executables in the path
+rehash
+
 #enable postgres
 echo 'postgresql_enable=true' >> /etc/rc.conf
 
+#move to /tmp to prevent an error when running sudo with psql
+cwd=$(pwd)
+cd /tmp
+
 #initialize the database
 /usr/local/etc/rc.d/postgresql initdb
+
+#start postgresql
+if [ ."$database_version" = ."9.6" ]; then
+	sudo -u postgres /usr/local/bin/pg_ctl -D /var/db/postgres/data96 -l logfile start
+fi
 
 #restart the service
 service postgresql restart
@@ -43,10 +55,6 @@ service postgresql restart
 #cp backup/fusionpbx-backup.sh /etc/cron.daily
 #chmod 755 /etc/cron.daily/fusionpbx-backup.sh
 #sed -i' ' -e "s/zzz/$password/g" /etc/cron.daily/fusionpbx-backup.sh
-
-#move to /tmp to prevent an error when running sudo with psql
-cwd=$(pwd)
-cd /tmp
 
 #add the databases, users and grant permissions to them
 #sudo -u postgres psql -d fusionpbx -c "DROP SCHEMA public cascade;";

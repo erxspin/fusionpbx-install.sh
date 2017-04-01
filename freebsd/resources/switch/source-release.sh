@@ -1,5 +1,14 @@
 #!/bin/sh
 
+#move to script directory so all relative paths work
+cd "$(dirname "$0")"
+
+#includes
+. ../config.sh
+
+#set the current working directory
+cwd=$(pwd)
+
 #send a message
 echo "Installing the FreeSWITCH source"
 
@@ -10,9 +19,11 @@ pkg install --yes wget sudo libsndfile lua52 opus libmemcached libvorbis libogg 
 #additional dependencies
 #pkg install --yes libshout mpg123 lame
 
+#update the list of executables in the path
+rehash
+
 #get the source
 git clone -b v1.6 https://freeswitch.org/stash/scm/fs/freeswitch.git /usr/src/freeswitch
-cd /usr/src/freeswitch
 
 #prepare the source
 cd /usr/src/freeswitch && /bin/sh /usr/src/freeswitch/bootstrap.sh -j
@@ -40,12 +51,9 @@ gmake uhd-sounds-install uhd-sounds-install
 mkdir -p /usr/local/freeswitch/sounds/music/default
 mv /usr/local/freeswitch/sounds/music/*000 /usr/local/freeswitch/sounds/music/default
 
-#move to script directory so all relative paths work
-cd "$(dirname "$0")"
-
 #configure system service
 ln -s /usr/local/freeswitch/bin/fs_cli /usr/bin/fs_cli
-cp rc.d.freeswitch /usr/local/etc/rc.d/freeswitch
+cp "$(cwd)/rc.d.freeswitch" /usr/local/etc/rc.d/freeswitch
 chmod u-w,ugo+x /usr/local/etc/rc.d/freeswitch
 
 #enable the service
