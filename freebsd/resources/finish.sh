@@ -40,6 +40,7 @@ interface_name=$(ifconfig | pcregrep -M -o '^[^\t:]+:([^\n]|\n\t)*status: active
 
 #get the ip address
 domain_name=$(ifconfig $interface_name | grep 'inet ' | awk '{print $2}')
+local_ip_v4=$(ifconfig $interface_name | grep 'inet ' | awk '{print $2}')
 
 #get a domain_uuid
 domain_uuid=$(/usr/local/bin/php /usr/local/www/fusionpbx/resources/uuid.php);
@@ -80,6 +81,9 @@ sed -i' ' -e s:"{v_project_path}::" /usr/local/freeswitch/conf/autoload_configs/
 sed -i' ' -e s:"{v_user}:$xml_cdr_username:" /usr/local/freeswitch/conf/autoload_configs/xml_cdr.conf.xml
 sed -i' ' -e s:"{v_pass}:$xml_cdr_password:" /usr/local/freeswitch/conf/autoload_configs/xml_cdr.conf.xml
 
+#add the local_ip_v4 address
+psql --host=$database_host --port=$database_port --username=$database_username -t -c "insert into v_vars (var_uuid, var_name, var_value, var_cat, var_order, var_enabled) values ('4507f7a9-2cbb-40a6-8799-f8f168082585', 'local_ip_v4', '$local_ip_v4', 'Defaults', '0', 'true');";
+
 #app defaults
 cd /usr/local/www/fusionpbx && php /usr/local/www/fusionpbx/core/upgrade/upgrade_domains.php
 
@@ -92,7 +96,7 @@ echo ""
 verbose "Installation has completed."
 echo ""
 echo "   Use a web browser to login."
-echo "      domain name: https://$domain_name"
+echo "      domain name: http://$domain_name"
 echo "      username: $user_name"
 echo "      password: $user_password"
 echo ""

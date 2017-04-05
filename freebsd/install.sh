@@ -8,12 +8,16 @@ cd "$(dirname "$0")"
 . ./resources/colors.sh
 . ./resources/environment.sh
 
-# removes the cd img from the /etc/apt/sources.list file (not needed after base install)
-#sed -i '/cdrom:/d' /etc/apt/sources.list
-
 #Update to latest packages
 verbose "Update installed packages"
-pkg upgrade
+pkg upgrade --yes
+
+#Update the ports
+if [ -d "/usr/ports" ]; then
+	portsnap fetch update
+else
+	portsnap fetch extract
+fi
 
 #PF - Packet Filter
 resources/pf.sh
@@ -28,7 +32,7 @@ resources/nginx.sh
 resources/php.sh
 
 #Fail2ban
-#resources/fail2ban.sh
+resources/fail2ban.sh
 
 #FreeSWITCH
 resources/switch.sh
@@ -36,16 +40,8 @@ resources/switch.sh
 #Postgres
 resources/postgres.sh
 
-#set the ip address
-server_address=$(hostname -I)
-
 #restart services
-if [ ."$php_version" = ."5" ]; then
-        service php5-fpm restart
-fi
-if [ ."$php_version" = ."7" ]; then
-        service php7.0-fpm restart
-fi
+service php-fpm restart
 service nginx restart
 service fail2ban restart
 
