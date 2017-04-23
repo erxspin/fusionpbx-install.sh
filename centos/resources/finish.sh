@@ -4,14 +4,16 @@
 cd "$(dirname "$0")"
 
 #includes
+. ./config.sh
 . ./colors.sh
-. ./arguments.sh
 
 #database details
 database_host=127.0.0.1
 database_port=5432
 database_username=fusionpbx
-database_password=$(dd if=/dev/urandom bs=1 count=20 2>/dev/null | base64 | sed 's/[=\+//]//g')
+if [ .$database_password = .'random' ]; then
+	database_password=$(dd if=/dev/urandom bs=1 count=20 2>/dev/null | base64 | sed 's/[=\+//]//g')
+fi
 
 #allow the script to use the new password
 export PGPASSWORD=$database_password
@@ -48,8 +50,12 @@ cd /var/www/fusionpbx && php /var/www/fusionpbx/core/upgrade/upgrade_domains.php
 #add the user
 user_uuid=$(/usr/bin/php /var/www/fusionpbx/resources/uuid.php);
 user_salt=$(/usr/bin/php /var/www/fusionpbx/resources/uuid.php);
-user_name=admin
-user_password=$(dd if=/dev/urandom bs=1 count=12 2>/dev/null | base64 | sed 's/[=\+//]//g')
+user_name=$system_username
+if [ .$system_password = .'random' ]; then
+	user_password=$(dd if=/dev/urandom bs=1 count=12 2>/dev/null | base64 | sed 's/[=\+//]//g')
+else
+	user_password=$system_password
+fi
 password_hash=$(php -r "echo md5('$user_salt$user_password');");
 psql --host=$database_host --port=$database_port --username=$database_username -t -c "insert into v_users (user_uuid, domain_uuid, username, password, salt, user_enabled) values('$user_uuid', '$domain_uuid', '$user_name', '$password_hash', '$user_salt', 'true');"
 
@@ -61,6 +67,25 @@ group_uuid=$(echo $group_uuid | sed 's/^[[:blank:]]*//;s/[[:blank:]]*$//')
 group_user_uuid=$(/usr/bin/php /var/www/fusionpbx/resources/uuid.php);
 group_name=superadmin
 psql --host=$database_host --port=$database_port --username=$database_username -c "insert into v_group_users (group_user_uuid, domain_uuid, group_name, group_uuid, user_uuid) values('$group_user_uuid', '$domain_uuid', '$group_name', '$group_uuid', '$user_uuid');"
+
+#update the php configuration
+sed -i 's/user nginx/user freeswitch daemon/g' /etc/nginx/nginx.conf
+chown -Rf freeswitch:daemon /var/lib/nginx
+sed -ie 's/user = apache/user = freeswitch/g' /etc/php-fpm.d/www.conf
+
+#update permissions
+chown -R freeswitch:daemon /var/lib/php/session
+
+#update the permissions
+chown -R freeswitch.daemon /etc/freeswitch /var/lib/freeswitch /var/log/freeswitch /usr/share/freeswitch /var/www/fusionpbx
+find /etc/freeswitch -type d -exec chmod 770 {} \;
+find /var/lib/freeswitch -type d -exec chmod 770 {} \;
+find /var/log/freeswitch -type d -exec chmod 770 {} \;
+find /usr/share/freeswitch -type d -exec chmod 770 {} \;
+find /etc/freeswitch -type f -exec chmod 664 {} \;
+find /var/lib/freeswitch -type f -exec chmod 664 {} \;
+find /var/log/freeswitch -type f -exec chmod 664 {} \;
+find /usr/share/freeswitch -type f -exec chmod 664 {} \;
 
 #update xml_cdr url, user and password
 xml_cdr_username=$(dd if=/dev/urandom bs=1 count=12 2>/dev/null | base64 | sed 's/[=\+//]//g')
@@ -74,6 +99,7 @@ sed -i /etc/freeswitch/autoload_configs/xml_cdr.conf.xml -e s:"{v_pass}:$xml_cdr
 #app defaults
 cd /var/www/fusionpbx && php /var/www/fusionpbx/core/upgrade/upgrade_domains.php
 
+#restart services
 systemctl daemon-reload
 systemctl mask wpa_supplicant.service
 systemctl stop wpa_supplicant.service
@@ -84,12 +110,12 @@ systemctl enable nginx
 systemctl enable freeswitch
 systemctl enable memcached
 systemctl enable postgresql-9.4
+systemctl daemon-reload
+systemctl restart freeswitch
 
 #welcome message
 echo ""
-echo ""
 verbose "Installation has completed."
-error "Please note details below and reboot your system"
 echo ""
 echo "   Use a web browser to login."
 echo "      domain name: https://$domain_name"
@@ -100,10 +126,25 @@ echo "   The domain name in the browser is used by default as part of the authen
 echo "   If you need to login to a different domain then use username@domain."
 echo "      username: $user_name@$domain_name";
 echo ""
+echo "   Official FusionPBX Training"
+echo "      Fastest way to learn FusionPBX. For more information https://www.fusionpbx.com."
+echo "      Available online and in person. Includes documentation and recording."
+echo ""
+echo "      Location          Manhattan Beach, California"
+echo "      Admin Training    1 - 2 May 2017 (2 Days)"
+echo "      Advanced Training 3 - 4 May 2017 (2 Days)"
+echo "      https://www.timeanddate.com/worldclock/usa/los-angeles"
+echo ""
+echo "      Location          Boise, Idaho"
+echo "      Admin Training    5 - 6 June 2017 (2 Days)"
+echo "      Advanced Training 7 - 8 June 2017 (2 Days)"
+echo "      Timezone: https://www.timeanddate.com/worldclock/usa/boise"
+echo ""
 echo "   Additional information."
 echo "      https://fusionpbx.com/support.php"
 echo "      https://www.fusionpbx.com"
 echo "      http://docs.fusionpbx.com"
+echo ""
 warning "*------------------------------------------*"
 warning "* NOTE: Please save the above information. *"
 warning "* REBOOT YOUR SERVER TO COMPLETE INSTALL.  *"

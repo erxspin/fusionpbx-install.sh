@@ -35,8 +35,11 @@ cd /usr/local/www/fusionpbx && php /usr/local/www/fusionpbx/core/upgrade/upgrade
 #get the server hostname
 #domain_name=$(hostname -f)
 
-#get the interface name
-interface_name=$(ifconfig | pcregrep -M -o '^[^\t:]+:([^\n]|\n\t)*status: active' | egrep -o -m 1 '^[^\t:]+')
+#get the primary interface name
+interface_name=$(ifconfig -l | awk '{print $1}')
+if [ .$interface_name = .'lo0' ]; then
+	interface_name=$(ifconfig -l | awk '{print $2}')
+fi
 
 #get the ip address
 domain_name=$(ifconfig $interface_name | grep 'inet ' | awk '{print $2}')
@@ -106,10 +109,17 @@ echo "      username: $user_name@$domain_name";
 echo ""
 echo "   Official FusionPBX Training"
 echo "      Fastest way to learn FusionPBX. For more information https://www.fusionpbx.com."
-echo "      Admin Training    27 - 28 March (2 Days)"
-echo "      Advanced Training 29 - 30 March (2 Days)"
-echo "      Timezone: https://www.timeanddate.com/worldclock/usa/boise"
 echo "      Available online and in person. Includes documentation and recording."
+echo ""
+echo "      Location          Manhattan Beach, California"
+echo "      Admin Training    1 - 2 May 2017 (2 Days)"
+echo "      Advanced Training 3 - 4 May 2017 (2 Days)"
+echo "      https://www.timeanddate.com/worldclock/usa/los-angeles"
+echo ""
+echo "      Location          Boise, Idaho"
+echo "      Admin Training    5 - 6 June 2017 (2 Days)"
+echo "      Advanced Training 7 - 8 June 2017 (2 Days)"
+echo "      Timezone: https://www.timeanddate.com/worldclock/usa/boise"
 echo ""
 echo "   Additional information."
 echo "      https://fusionpbx.com/support.php"

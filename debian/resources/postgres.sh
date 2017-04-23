@@ -19,7 +19,7 @@ echo "Install PostgreSQL and create the database and users\n"
 
 #use the system database repo for arm
 if [ .$cpu_architecture = .'arm' ]; then
-        database_repo="system"
+        database_repo="sip247"
 fi
 
 #included in the distribution
@@ -45,6 +45,14 @@ if [ ."$database_repo" = ."2ndquadrant" ]; then
 	apt-get install -y --force-yes sudo postgresql-bdr-9.4 postgresql-bdr-9.4-bdr-plugin postgresql-bdr-contrib-9.4
 fi
 
+#sip247 arm repository
+if [ ."$database_repo" = ."sip247" ]; then
+        echo 'deb http://repo.sip247.com/debian/postgresql-armhf jessie main' > /etc/apt/sources.list.d/pgsql-sip247.list
+        wget --quiet -O - http://repo.sip247.com/debian/sip247.com.gpg.key | apt-key add -
+        apt-get update && apt-get upgrade -y
+        apt-get install -y --force-yes sudo postgresql
+fi
+
 #systemd
 systemctl daemon-reload
 systemctl restart postgresql
@@ -60,6 +68,7 @@ sed -i "s/zzz/$password/g" /etc/cron.daily/fusionpbx-backup.sh
 #move to /tmp to prevent a red herring error when running sudo with psql
 cwd=$(pwd)
 cd /tmp
+
 #add the databases, users and grant permissions to them
 sudo -u postgres psql -d fusionpbx -c "DROP SCHEMA public cascade;";
 sudo -u postgres psql -d fusionpbx -c "CREATE SCHEMA public;";
