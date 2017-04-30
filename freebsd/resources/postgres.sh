@@ -7,6 +7,9 @@ cd "$(dirname "$0")"
 . ./config.sh
 . ./colors.sh
 
+#install the dependencies
+pkg install --yes sudo 
+
 #move to /tmp to prevent an error when running sudo with psql
 cwd=$(pwd)
 cd /tmp
@@ -37,9 +40,6 @@ if [ ."$database_version" = ."9.3" ]; then
         pkg install --yes postgresql93-server
 	#cd /usr/ports/databases/postgresql93-server/ && make install clean BATCH=yes
 fi
-
-#update the list of executables in the path
-rehash
 
 #enable postgres
 echo 'postgresql_enable=true' >> /etc/rc.conf

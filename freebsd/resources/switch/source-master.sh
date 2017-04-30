@@ -19,9 +19,6 @@ pkg install --yes wget sudo libsndfile lua52 opus libmemcached libvorbis libogg 
 #additional dependencies
 #pkg install --yes libshout mpg123 lame
 
-#update the list of executables in the path
-rehash
-
 #get the source
 git clone https://freeswitch.org/stash/scm/fs/freeswitch.git /usr/src/freeswitch
 
@@ -61,7 +58,7 @@ chmod u-w,ugo+x /usr/local/etc/rc.d/freeswitch
 
 #enable the service
 echo 'freeswitch_enable="YES"' >> /etc/rc.conf
-echo 'freeswitch_flags="-nc -nonat -reincarnate -u www -g www"' >> /etc/rc.conf
+echo 'freeswitch_flags="-nc -nonat -u www -g www"' >> /etc/rc.conf
 
 #start the service
-service freeswitch start
+service memcached start
